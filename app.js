@@ -12,30 +12,28 @@ app.use(
 )
 
 
-///// Handling requests
 const toursFile = `${__dirname}/dev-data/data/tours-simple.json`;
-    
-app.get('/', (req, res) => { 
-    // res.status(200).send('Welcome!');
-    res.status(200).json(
-        { message: "Welcome!", joke: "Dad joke here" }
-    );
-})
+
+
+//////////////////////////////////////////////////////////////////
 
 const tours = JSON.parse(fs.readFileSync(toursFile));
 
-// Get all tours
-app.get('/api/v1/tours', (req, res) => { 
+const welcome =  (req, res) => { 
+    // res.status(200).send('Welcome!');
+    res.status(200).json( { message: "Welcome!", joke: "Dad joke here" });
+}
+    
+const getTours = (req, res) => { 
     res.status(200).json({
         status: 'success',
         data: {
             tours
         }
     })
-});
+};
 
-// Get tour by id
-app.get('/api/v1/tours/:id', (req, res) => {
+const getTour = (req, res) => {
     
     const tourId = +req.params.id;
     const tour = tours.find(el=> el.id === tourId)
@@ -53,16 +51,54 @@ app.get('/api/v1/tours/:id', (req, res) => {
             tour
         }
     })
-});
+}
 
-// Create tour
-app.post('/api/v1/tours', (req, res) => { 
+const updateTour =  (req, res) => {
+    
+    const tourId = +req.params.id;
+    const tour = tours.find(el=> el.id === tourId)
+
+    if (!tour) { 
+        return res.status(404).json({
+            status: "fail",
+            message:"InvalidID"
+        })
+    }
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            tour: '< Updated tour here... >'
+        }
+    })
+}
+
+const deleteTour = (req, res) => {
+    
+    const tourId = +req.params.id;
+    const tour = tours.find(el=> el.id === tourId)
+
+    if (!tour) { 
+        return res.status(404).json({
+            status: "fail",
+            message:"InvalidID"
+        })
+    }
+
+    // 204 status code = 'no content' because nothing to return
+    res.status(204).json({
+        status: 'null',
+        data: null
+    })
+}
+
+const createTour = (req, res) => {
 
     const nextId = tours[tours.length - 1].id + 1;
     const newTour = Object.assign({ id: nextId }, req.body);
     console.log(newTour);
     tours.push(newTour);
-    fs.writeFile(toursFile, JSON.stringify(tours), err => { 
+    fs.writeFile(toursFile, JSON.stringify(tours), err => {
 
         if (err) console.err(err)
 
@@ -74,7 +110,30 @@ app.post('/api/v1/tours', (req, res) => {
         })
     })
 
-});
+};
+
+//////////////////////////////////////////////////////////////////
+///// Handling requests
+
+// Pre-refactor
+// app.get('/', welcome)
+// app.get('/api/v1/tours', getTours);
+// app.get('/api/v1/tours/:id', getTour);
+// app.patch('/api/v1/tours/:id',updateTour);
+// app.delete('/api/v1/tours/:id', deleteTour);
+// app.post('/api/v1/tours', createTour);
+
+app.get('/', welcome)
+
+app.route('/api/v1/tours')
+    .get(getTours)
+    .post(createTour);
+
+app.route('/api/v1/tours/:id')
+    .get(getTour)
+    .patch(updateTour)
+    .delete(deleteTour);
+
 
 
 // Start API
